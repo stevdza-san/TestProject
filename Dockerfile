@@ -33,12 +33,13 @@ RUN wget https://github.com/varabyte/kobweb-cli/releases/download/v${KOBWEB_CLI_
 ENV PATH="/kobweb-${KOBWEB_CLI_VERSION}/bin:${PATH}"
 RUN echo $PATH
 
-WORKDIR /project/site
+WORKDIR /project/
 
-# Decrease Gradle memory usage to avoid OOM situations in
-# tight environments.
+# Decrease Gradle memory usage to avoid OOM situations in tight environments.
 RUN echo "" >> gradle.properties # add a newline
 RUN echo "org.gradle.jvmargs=-Xmx256m" >> gradle.properties
+
+WORKDIR /project/site
 
 RUN kobweb export --notty
 
