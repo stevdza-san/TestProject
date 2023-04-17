@@ -33,7 +33,7 @@ RUN wget https://github.com/varabyte/kobweb-cli/releases/download/v${KOBWEB_CLI_
 ENV PATH="/kobweb-${KOBWEB_CLI_VERSION}/bin:${PATH}"
 RUN echo $PATH
 
-WORKDIR /project
+WORKDIR TestProject/site
 
 RUN kobweb export --notty && ./gradlew --stop
 
