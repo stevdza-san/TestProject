@@ -35,7 +35,12 @@ RUN echo $PATH
 
 WORKDIR /project/site
 
-RUN kobweb export --notty && ./gradlew --stop
+# Decrease Gradle memory usage to avoid OOM situations in
+# tight environments.
+RUN echo "" >> gradle.properties # add a newline
+RUN echo "org.gradle.jvmargs=-Xmx256m" >> gradle.properties
+
+RUN kobweb export --notty
 
 ENV PORT=8080
 ENV MONGODB_URI="mongodb+srv://stefanjovanavich:123456789stt@mycluster.ct3hxyx.mongodb.net/test"
