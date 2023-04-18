@@ -1,5 +1,4 @@
 FROM debian:stable-slim
-USER root
 
 ARG KOBWEB_CLI_VERSION=0.9.12
 
@@ -25,7 +24,6 @@ RUN apt-get install -y openjdk-11-jdk
 
 # Setup JAVA_HOME -- needed by kobweb / gradle
 ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64/
-RUN export JAVA_HOME
 RUN java -version
 
 # Install kobweb
@@ -43,9 +41,6 @@ WORKDIR /project/site
 
 RUN kobweb export --notty
 
-RUN export PORT=$(kobweb conf server.port)
-EXPOSE $PORT
-
 # Purge all the things we don't need anymore, saving space on web servers that
 # may need all the spare MB they can get!
 RUN apt-get clean && apt-get purge --auto-remove -y curl gnupg nodejs unzip wget  \
@@ -53,7 +48,7 @@ RUN apt-get clean && apt-get purge --auto-remove -y curl gnupg nodejs unzip wget
     && rm -rf ~/.cache/ms-playwright
 
 # Finally, run our web server! We stop the Gradle daemon at this point because
-# its work is done. Finally, we keep the Docker container from closing (with
+# its work is done. We keep the Docker container from closing (with
 # `tail -f ...`) since `kobweb run --notty` doesn't block but is running in the
 # background.
 CMD kobweb run --notty --env prod \
