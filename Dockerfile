@@ -7,6 +7,8 @@ ARG KOBWEB_CLI_VERSION=0.9.12
 # Docker container root without worrying about clobbering project files.
 COPY . /project
 
+RUN chmod +x project/gradlew
+
 # Prepare apt-get and get generally useful packages
 RUN apt-get update \
     && apt-get install -y curl gnupg unzip wget
