@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  export:
+  export_and_upload:
     runs-on: ubuntu-latest
 
     env:
@@ -46,12 +46,10 @@ jobs:
       - name: Unzip kobweb
         run: |
           unzip kobweb-${{ env.KOBWEB_CLI_VERSION }}.zip
-
       - name: Run export
         run: |
           cd site
           ../kobweb-${{ env.KOBWEB_CLI_VERSION }}/bin/kobweb export --notty
-
       - name: Upload kobweb folder
         uses: actions/upload-artifact@v3
         with:
@@ -60,6 +58,11 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  notify_render:
+    needs: export_and_upload
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Notify Render
         run: |
           curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
