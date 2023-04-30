@@ -1,44 +1,42 @@
 FROM debian:stable-slim as base
 
-FROM base as fetch
+FROM base as export
 
-ARG GITHUB_OWNER=stevdza-san
-ARG GITHUB_REPO=TestProject
+ENV KOBWEB_CLI_VERSION=0.9.12
 
-# Secret "github-token.txt" should have been added in Environment > Secret Files!
-COPY github-token.txt github-token.txt
+# Copy the project code to an arbitrary subdir so we can install stuff in the
+# Docker container root without worrying about clobbering project files.
+COPY . /project
 
+# Update and install required OS packages to continue
+# Note: Playwright is a system for running browsers, and here we use it to install Chromium.
 RUN apt-get update \
-    && apt-get install -y curl jq unzip
+    && apt-get install -y curl gnupg unzip wget openjdk-11-jdk \
+    && curl -sL https://deb.nodesource.com/setup_19.x | bash - \
+    && apt-get install -y nodejs \
+    && npm init -y \
+    && npx playwright install --with-deps chromium
 
-# Fetch the latest artifact metadata from GitHub \
-RUN curl -GL \
-      -H "Accept: application/vnd.github+json" \
-      -H "Authorization: Bearer $(cat github-token.txt)" \
-      -H "X-GitHub-Api-Version: 2022-11-28" \
-      "https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/artifacts" \
-        -d 'per_page=1' -d 'name=kobweb-folder' \
-      > latest-release.json \
-    && cat latest-release.json
+# Fetch the latest version of the Kobweb CLI
+RUN wget https://github.com/varabyte/kobweb-cli/releases/download/v${KOBWEB_CLI_VERSION}/kobweb-${KOBWEB_CLI_VERSION}.zip \
+    && unzip kobweb-${KOBWEB_CLI_VERSION}.zip \
+    && rm kobweb-${KOBWEB_CLI_VERSION}.zip
 
-# Use jq to parse the JSON response and extract the download URL for our target release artifact
-RUN jq -r '.artifacts[0].archive_download_url' latest-release.json > download-url.txt \
-    && cat download-url.txt
+ENV PATH="/kobweb-${KOBWEB_CLI_VERSION}/bin:${PATH}"
 
-# Download the latest artifact
-RUN curl -GL \
-      -H "Authorization: Bearer $(cat github-token.txt)" \
-      $(cat download-url.txt) \
-      > kobweb-folder.zip \
-    # Unzip the artifact. Its payload contains everything we need to run our site. The folder must be called `.kobweb`.
-    && unzip kobweb-folder.zip -d .kobweb
+WORKDIR /project/site
+
+# Decrease Gradle memory usage to avoid OOM situations in tight environments.
+RUN mkdir ~/.gradle && \
+    echo "org.gradle.jvmargs=-Xmx256m" >> ~/.gradle/gradle.properties
+
+RUN kobweb export --notty
 
 FROM base as run
 
-COPY --from=fetch .kobweb .kobweb
+COPY --from=export /project/site/.kobweb .kobweb
 
 RUN apt-get update \
     && apt-get install -y openjdk-11-jre-headless
 
-CMD java -Dkobweb.server.environment=PROD -Dkobweb.site.layout=KOBWEB -Dio.ktor.development=false -jar .kobweb/server/server.jar
-
+ENTRYPOINT .kobweb/server/start.sh
