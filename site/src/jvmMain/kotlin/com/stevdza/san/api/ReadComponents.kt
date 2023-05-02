@@ -10,11 +10,11 @@ import kotlinx.serialization.json.Json
 
 @Api(routeOverride = "readcomponents")
 suspend fun readComponents(ctx: ApiContext) {
-    try {
+//    try {
         ctx.logger.info("HELLO: ${System.getenv("MONGODB_URI")}")
         val result = ctx.data.getValue<MongoDB>().read()
         ctx.res.setBodyText(Json.encodeToString(result))
-    } catch (e: Exception) {
-        ctx.res.setBodyText(e.toString())
-    }
+//    } catch (e: Exception) {
+//        ctx.res.setBodyText(e.toString())
+//    }
 }

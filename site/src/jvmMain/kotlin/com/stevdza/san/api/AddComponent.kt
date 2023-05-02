@@ -11,9 +11,9 @@ import com.varabyte.kobweb.api.http.setBodyText
 suspend fun addComponent(ctx: ApiContext) {
     val name = ctx.req.params["name"] ?: "unknown"
 
-    try {
+//    try {
         ctx.res.setBodyText(ctx.data.getValue<MongoDB>().add(UiComponent(name = name)).toString())
-    } catch (e: Exception) {
-        ctx.res.setBodyText(e.toString())
-    }
+//    } catch (e: Exception) {
+//        ctx.res.setBodyText(e.toString())
+//    }
 }
